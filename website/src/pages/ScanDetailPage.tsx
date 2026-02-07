@@ -14,6 +14,8 @@ import {
   Brain,
   Link2,
   Info,
+  FileText,
+  Shield,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -57,7 +59,7 @@ function HighlightedBody({ body, phrases }: { body: string; phrases: Scan["dange
         part.isHighlighted ? (
           <Tooltip key={i}>
             <TooltipTrigger asChild>
-              <span className="cursor-help rounded bg-risk-high/15 px-0.5 text-risk-high underline decoration-risk-high/40 decoration-wavy">
+              <span className="cursor-help rounded-sm bg-risk-high/20 px-1 py-0.5 text-risk-high font-medium">
                 {part.text}
               </span>
             </TooltipTrigger>
@@ -73,11 +75,11 @@ function HighlightedBody({ body, phrases }: { body: string; phrases: Scan["dange
   );
 }
 
-const techniqueLabels: Record<string, string> = {
-  urgency: "⏰ Urgency",
-  fear: "😨 Fear",
-  impersonation: "🎭 Impersonation",
-  greed: "💰 Greed",
+const techniqueLabels: Record<string, { label: string; emoji: string }> = {
+  urgency: { label: "Urgency", emoji: "⏰" },
+  fear: { label: "Fear", emoji: "😨" },
+  impersonation: { label: "Impersonation", emoji: "🎭" },
+  greed: { label: "Greed", emoji: "💰" },
 };
 
 export default function ScanDetailPage() {
@@ -93,15 +95,24 @@ export default function ScanDetailPage() {
   }, [id]);
 
   if (loading) {
-    return <div className="py-20 text-center text-muted-foreground">Loading...</div>;
+    return (
+      <div className="py-20 text-center">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="mt-3 text-sm text-muted-foreground">Loading scan details...</p>
+      </div>
+    );
   }
 
   if (!scan) {
     return (
       <div className="py-20 text-center">
-        <p className="text-muted-foreground">Scan not found.</p>
-        <Link to="/scans" className="mt-2 text-sm text-primary underline">
-          Back to scans
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mb-4">
+          <Shield className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <p className="text-lg font-medium text-foreground mb-1">Scan not found</p>
+        <p className="text-muted-foreground mb-4">This scan may have been deleted or doesn't exist.</p>
+        <Link to="/scans" className="text-sm text-primary hover:underline">
+          ← Back to scans
         </Link>
       </div>
     );
@@ -112,102 +123,126 @@ export default function ScanDetailPage() {
       {/* Back */}
       <Link
         to="/scans"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to scans
+        <ArrowLeft className="h-4 w-4" /> Back to Scan History
       </Link>
 
-      {/* Email Overview */}
-      <div className="rounded-lg border border-border bg-card p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
-            <h2 className="text-lg font-bold text-card-foreground">{scan.subject}</h2>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <User className="h-3 w-3" /> {scan.senderName}
-              </span>
-              <span className="flex items-center gap-1">
-                <Mail className="h-3 w-3" /> {scan.sender}
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />{" "}
-                {new Date(scan.timestamp).toLocaleString()}
-              </span>
+      {/* Email Overview Card */}
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className={`px-6 py-4 ${
+          scan.riskLevel === 'high'
+            ? 'bg-risk-high/10 border-b border-risk-high/20'
+            : scan.riskLevel === 'medium'
+            ? 'bg-risk-medium/10 border-b border-risk-medium/20'
+            : 'bg-risk-safe/10 border-b border-risk-safe/20'
+        }`}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <RiskBadge level={scan.riskLevel} size="md" />
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              {new Date(scan.timestamp).toLocaleString()}
             </div>
           </div>
-          <RiskBadge level={scan.riskLevel} size="md" />
+        </div>
+        <div className="p-6">
+          <h2 className="text-xl font-bold text-card-foreground mb-3">{scan.subject}</h2>
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span className="font-medium text-card-foreground">{scan.senderName}</span>
+            </span>
+            <span className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              {scan.sender}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Risk Summary */}
-      <div className="rounded-lg border border-border bg-card p-5">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-card-foreground">
-          <AlertTriangle className="h-4 w-4" /> Risk Summary
+      {/* Risk Analysis Card */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-card-foreground">
+          <AlertTriangle className="h-5 w-5 text-primary" /> Risk Analysis
         </h3>
-        <div className="flex flex-wrap items-center gap-4">
-          <RiskBadge level={scan.riskLevel} size="md" />
+        
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Confidence Score */}
           <div>
-            <p className="text-sm text-muted-foreground">
-              Confidence: <span className="font-bold text-card-foreground">{scan.confidence}%</span>
-            </p>
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-muted-foreground">Confidence Score</span>
+              <span className="font-bold text-card-foreground">{scan.confidence}%</span>
+            </div>
+            <div className="h-3 overflow-hidden rounded-full bg-muted">
+              <div
+                className={`h-full transition-all duration-500 ${
+                  scan.riskLevel === "high"
+                    ? "bg-risk-high"
+                    : scan.riskLevel === "medium"
+                    ? "bg-risk-medium"
+                    : "bg-risk-safe"
+                }`}
+                style={{ width: `${scan.confidence}%` }}
+              />
+            </div>
           </div>
+          
+          {/* Techniques Detected */}
           {scan.techniques.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {scan.techniques.map((t) => (
-                <span
-                  key={t}
-                  className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
-                >
-                  {techniqueLabels[t] ?? t}
-                </span>
-              ))}
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Techniques Detected</p>
+              <div className="flex flex-wrap gap-2">
+                {scan.techniques.map((t) => {
+                  const tech = techniqueLabels[t] ?? { label: t, emoji: "⚠️" };
+                  return (
+                    <span
+                      key={t}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground"
+                    >
+                      {tech.emoji} {tech.label}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
-
-        {/* Confidence bar */}
-        <div className="mt-4">
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className={`h-full transition-all ${
-                scan.riskLevel === "high"
-                  ? "bg-risk-high"
-                  : scan.riskLevel === "medium"
-                  ? "bg-risk-medium"
-                  : "bg-risk-safe"
-              }`}
-              style={{ width: `${scan.confidence}%` }}
-            />
-          </div>
-        </div>
       </div>
 
-      {/* Email Body */}
-      <div className="rounded-lg border border-border bg-card p-5">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-card-foreground">
-          <Mail className="h-4 w-4" /> Email Body
+      {/* Email Body Card */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-card-foreground">
+          <FileText className="h-5 w-5 text-primary" /> Email Content
           {scan.dangerousPhrases.length > 0 && (
-            <span className="text-xs font-normal text-muted-foreground">
-              (hover highlighted text for details)
+            <span className="text-xs font-normal text-muted-foreground ml-1">
+              — hover highlighted text for details
             </span>
           )}
         </h3>
-        <div className="rounded-md border border-border bg-muted/30 p-4 font-mono text-xs">
+        <div className="rounded-lg border border-border bg-muted/30 p-5 font-mono text-sm">
           <HighlightedBody body={scan.body} phrases={scan.dangerousPhrases} />
         </div>
       </div>
 
       {/* Why This Is Dangerous */}
       {scan.reasons.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-5">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-card-foreground">
-            <Brain className="h-4 w-4" /> Why This Is Dangerous
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-card-foreground">
+            <Brain className="h-5 w-5 text-primary" /> Analysis Findings
           </h3>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {scan.reasons.map((reason, i) => (
-              <li key={i} className="flex gap-2 text-sm text-card-foreground">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-risk-high mt-0.5" />
-                {reason}
+              <li key={i} className="flex gap-3 text-sm">
+                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+                  scan.riskLevel === 'high' 
+                    ? 'bg-risk-high/10 text-risk-high' 
+                    : scan.riskLevel === 'medium'
+                    ? 'bg-risk-medium/10 text-risk-medium'
+                    : 'bg-risk-safe/10 text-risk-safe'
+                }`}>
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                </div>
+                <span className="text-card-foreground pt-0.5">{reason}</span>
               </li>
             ))}
           </ul>
@@ -216,15 +251,15 @@ export default function ScanDetailPage() {
 
       {/* Link Analysis */}
       {scan.links.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-5">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-card-foreground">
-            <Link2 className="h-4 w-4" /> Link Analysis
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-card-foreground">
+            <Link2 className="h-5 w-5 text-primary" /> Link Analysis
           </h3>
           <div className="space-y-3">
             {scan.links.map((link, i) => (
               <div
                 key={i}
-                className="rounded-md border border-border bg-muted/30 p-4 space-y-2"
+                className="rounded-lg border border-border bg-muted/30 p-4 space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-card-foreground">
@@ -232,12 +267,12 @@ export default function ScanDetailPage() {
                   </span>
                   <RiskBadge level={link.riskLevel} size="sm" />
                 </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono break-all">
-                  <ExternalLink className="h-3 w-3 shrink-0" />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono break-all">
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                   {link.actualUrl}
                 </div>
-                <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                  <Info className="h-3 w-3 shrink-0 mt-0.5" />
+                <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                   {link.reason}
                 </p>
               </div>
@@ -246,16 +281,22 @@ export default function ScanDetailPage() {
         </div>
       )}
 
-      {/* Action Recommendation */}
-      <div className={`rounded-lg border p-5 ${
+      {/* Recommendation */}
+      <div className={`rounded-xl border p-6 shadow-sm ${
         scan.riskLevel === "high"
           ? "border-risk-high/30 bg-risk-high/5"
           : scan.riskLevel === "medium"
           ? "border-risk-medium/30 bg-risk-medium/5"
           : "border-risk-safe/30 bg-risk-safe/5"
       }`}>
-        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-card-foreground">
-          <ShieldCheck className="h-4 w-4" /> Recommended Action
+        <h3 className="mb-3 flex items-center gap-2 text-base font-semibold text-card-foreground">
+          <ShieldCheck className={`h-5 w-5 ${
+            scan.riskLevel === 'high' 
+              ? 'text-risk-high' 
+              : scan.riskLevel === 'medium'
+              ? 'text-risk-medium'
+              : 'text-risk-safe'
+          }`} /> Recommended Action
         </h3>
         <p className="text-sm text-card-foreground">{scan.recommendation}</p>
       </div>

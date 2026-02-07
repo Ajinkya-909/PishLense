@@ -2,20 +2,23 @@ import { type RiskLevel } from "@/types/phishing";
 import { cn } from "@/lib/utils";
 import { ShieldAlert, ShieldCheck, AlertTriangle } from "lucide-react";
 
-const config: Record<RiskLevel, { label: string; className: string; icon: React.ElementType }> = {
+const config: Record<RiskLevel, { label: string; bgClass: string; textClass: string; icon: React.ElementType }> = {
   high: {
     label: "High Risk",
-    className: "bg-risk-high text-risk-high-foreground",
+    bgClass: "bg-risk-high/10",
+    textClass: "text-risk-high",
     icon: ShieldAlert,
   },
   medium: {
-    label: "Medium Risk",
-    className: "bg-risk-medium text-risk-medium-foreground",
+    label: "Medium",
+    bgClass: "bg-risk-medium/10",
+    textClass: "text-risk-medium",
     icon: AlertTriangle,
   },
   safe: {
     label: "Safe",
-    className: "bg-risk-safe text-risk-safe-foreground",
+    bgClass: "bg-risk-safe/10",
+    textClass: "text-risk-safe",
     icon: ShieldCheck,
   },
 };
@@ -27,16 +30,17 @@ interface RiskBadgeProps {
 }
 
 export function RiskBadge({ level, size = "sm", showIcon = true }: RiskBadgeProps) {
-  const { label, className, icon: Icon } = config[level];
+  const { label, bgClass, textClass, icon: Icon } = config[level];
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-md font-semibold",
-        size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm",
-        className
+        "inline-flex items-center gap-1.5 rounded-full font-medium",
+        size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-sm",
+        bgClass,
+        textClass
       )}
     >
-      {showIcon && <Icon className={size === "sm" ? "h-3 w-3" : "h-4 w-4"} />}
+      {showIcon && <Icon className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />}
       {label}
     </span>
   );

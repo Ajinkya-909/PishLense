@@ -5,7 +5,7 @@ import type { Scan, AnalysisRule } from "@/types/phishing";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { RiskBadge } from "@/components/RiskBadge";
-import { Search, Sparkles, ArrowRight } from "lucide-react";
+import { Search, Sparkles, ArrowRight, FileText, ShieldCheck, AlertCircle } from "lucide-react";
 
 function simulateAnalysis(text: string, rules: AnalysisRule[]): Omit<Scan, "id" | "timestamp"> {
   const lowerText = text.toLowerCase();
@@ -101,85 +101,127 @@ export default function AnalyzePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Manual Analysis</h2>
+        <h2 className="text-2xl font-bold text-foreground">Analyze Email</h2>
         <p className="text-sm text-muted-foreground">
-          Paste email content below to run a simulated phishing analysis
+          Paste suspicious content to detect phishing patterns
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-5 space-y-4">
+      {/* Analysis Input Card */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm space-y-5">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <FileText className="h-4 w-4 text-primary" />
+          </div>
+          <span>Paste email content, headers, or suspicious links below</span>
+        </div>
+        
         <Textarea
-          placeholder="Paste suspicious email content here..."
+          placeholder="Subject: Urgent: Your account has been compromised!&#10;&#10;Dear Customer,&#10;&#10;We have detected unusual activity on your account. Please click the link below to verify your identity immediately or your account will be suspended within 24 hours.&#10;&#10;[Paste full email content here...]"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          rows={10}
-          className="font-mono text-sm"
+          rows={12}
+          className="font-mono text-sm bg-background resize-none"
         />
+        
         <Button
           onClick={handleAnalyze}
           disabled={!text.trim() || analyzing}
-          className="w-full gap-2"
+          className="w-full gap-2 h-11"
+          size="lg"
         >
           {analyzing ? (
             <>
-              <Sparkles className="h-4 w-4 animate-pulse" /> Analyzing...
+              <Sparkles className="h-4 w-4 animate-pulse" /> Analyzing content...
             </>
           ) : (
             <>
-              <Search className="h-4 w-4" /> Analyze Email
+              <Search className="h-4 w-4" /> Analyze for Threats
             </>
           )}
         </Button>
       </div>
 
+      {/* Result Card */}
       {result && (
-        <div className="rounded-lg border border-border bg-card p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-card-foreground">
-              Analysis Result
-            </h3>
-            <RiskBadge level={result.riskLevel} size="md" />
-          </div>
-
-          <div>
-            <p className="text-xs text-muted-foreground">
-              Confidence: {result.confidence}%
-            </p>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className={`h-full ${
-                  result.riskLevel === "high"
-                    ? "bg-risk-high"
-                    : result.riskLevel === "medium"
-                    ? "bg-risk-medium"
-                    : "bg-risk-safe"
-                }`}
-                style={{ width: `${result.confidence}%` }}
-              />
+        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          {/* Result Header */}
+          <div className={`px-6 py-4 ${
+            result.riskLevel === 'high'
+              ? 'bg-risk-high/10 border-b border-risk-high/20'
+              : result.riskLevel === 'medium'
+              ? 'bg-risk-medium/10 border-b border-risk-medium/20'
+              : 'bg-risk-safe/10 border-b border-risk-safe/20'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {result.riskLevel === 'safe' ? (
+                  <ShieldCheck className="h-5 w-5 text-risk-safe" />
+                ) : (
+                  <AlertCircle className={`h-5 w-5 ${
+                    result.riskLevel === 'high' ? 'text-risk-high' : 'text-risk-medium'
+                  }`} />
+                )}
+                <h3 className="text-base font-semibold text-card-foreground">
+                  Analysis Complete
+                </h3>
+              </div>
+              <RiskBadge level={result.riskLevel} size="md" />
             </div>
           </div>
 
-          {result.reasons.length > 0 && (
-            <ul className="space-y-1 text-sm text-card-foreground">
-              {result.reasons.map((r, i) => (
-                <li key={i} className="flex gap-2">
-                  <span className="text-muted-foreground">•</span> {r}
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="p-6 space-y-5">
+            {/* Confidence */}
+            <div>
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Confidence Score</span>
+                <span className="font-semibold text-card-foreground">{result.confidence}%</span>
+              </div>
+              <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className={`h-full transition-all duration-500 ${
+                    result.riskLevel === "high"
+                      ? "bg-risk-high"
+                      : result.riskLevel === "medium"
+                      ? "bg-risk-medium"
+                      : "bg-risk-safe"
+                  }`}
+                  style={{ width: `${result.confidence}%` }}
+                />
+              </div>
+            </div>
 
-          <p className="text-sm text-card-foreground">{result.recommendation}</p>
+            {/* Reasons */}
+            {result.reasons.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-card-foreground">Findings</p>
+                <ul className="space-y-1.5">
+                  {result.reasons.map((r, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-muted-foreground">
+                      <span className="text-primary mt-1">•</span>
+                      <span>{r}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1"
-            onClick={() => navigate(`/scans/${result.id}`)}
-          >
-            View Full Details <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
+            {/* Recommendation */}
+            <div className="rounded-lg bg-muted/50 p-4">
+              <p className="text-sm font-medium text-card-foreground mb-1">Recommendation</p>
+              <p className="text-sm text-muted-foreground">{result.recommendation}</p>
+            </div>
+
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => navigate(`/scans/${result.id}`)}
+            >
+              View Full Analysis <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
     </div>

@@ -39,7 +39,7 @@ npm run dev
 bun run dev
 ```
 
-The application will be available at `http://localhost:5173`
+The application will be available at `http://localhost:8080`
 
 ### Alternative Setup Methods
 
